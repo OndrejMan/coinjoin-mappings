@@ -1,0 +1,190 @@
+{
+    "coinjoins": {
+        "a0ddfff8b16eaa9c461a15a2b70d174530b649426ac0472464b62f4a5ef02d6a": {
+            "txid": "a0ddfff8b16eaa9c461a15a2b70d174530b649426ac0472464b62f4a5ef02d6a",
+            "inputs": {
+                "0": {
+                    "address": "bc1pgv8ms9jw4wq00y2h9ygdt52l3hhuz47yzzx2a0dv0fydqs878cjq7m97kg",
+                    "txid": "ad52c33aae6269f766e370ad555d1a89b292746700c680f7cb04ec71eb4cd360",
+                    "value": 200000,
+                    "spending_tx": "vout_ad52c33aae6269f766e370ad555d1a89b292746700c680f7cb04ec71eb4cd360_14",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "1": {
+                    "address": "bc1p8l5nwndp6r85hu637mqvnycrdswpvs7y88nuxujlu5n9gz39jchq7cy47l",
+                    "txid": "3bc92fd24523cfea59598526a4efbd4caf457100fc3bf18bd22367b1d86cf827",
+                    "value": 131072,
+                    "spending_tx": "vout_3bc92fd24523cfea59598526a4efbd4caf457100fc3bf18bd22367b1d86cf827_8",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "2": {
+                    "address": "bc1qu05xdrhcnf2pfnyr4qu8xkhq8fgdqyd9k0ae3m",
+                    "txid": "4736aeecbda4ed57268ecab54e3d053655d55557bdbadf7359616ec399d57650",
+                    "value": 131072,
+                    "spending_tx": "vout_4736aeecbda4ed57268ecab54e3d053655d55557bdbadf7359616ec399d57650_7",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "3": {
+                    "address": "bc1qp3yxjvvmzt876x38m4202g66zdcgmu5yr662z8",
+                    "txid": "af0d4035244dfff5ef1cd070340d30e71584c396628b7f771da44bbf86bb841c",
+                    "value": 118098,
+                    "spending_tx": "vout_af0d4035244dfff5ef1cd070340d30e71584c396628b7f771da44bbf86bb841c_6",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "4": {
+                    "address": "bc1pz06t3ata6qsx809tjeegyyf8k5wcqmecpq6ga2dcqnfygy99lussc2l9yn",
+                    "txid": "4736aeecbda4ed57268ecab54e3d053655d55557bdbadf7359616ec399d57650",
+                    "value": 59049,
+                    "spending_tx": "vout_4736aeecbda4ed57268ecab54e3d053655d55557bdbadf7359616ec399d57650_8",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "5": {
+                    "address": "bc1q7xat23kvxl6z5l82g6mquw0qvthn7g6fcuwpht",
+                    "txid": "29ad78df5f77d6289cfe4331fec44e27cc0e9b37016d1f1497eeda5c9e834765",
+                    "value": 59049,
+                    "spending_tx": "vout_29ad78df5f77d6289cfe4331fec44e27cc0e9b37016d1f1497eeda5c9e834765_18",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "6": {
+                    "address": "bc1qwwldseaw7r5utgdczypq66azys3t6s9mcjdpwn",
+                    "txid": "c4c9f296e9828839b5a17d57413faed44053de4b98b036dff61e7001bc22acf2",
+                    "value": 39366,
+                    "spending_tx": "vout_c4c9f296e9828839b5a17d57413faed44053de4b98b036dff61e7001bc22acf2_15",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "7": {
+                    "address": "bc1pvm7epg06ftaf5mau3pgmhrdkh57u0tyj5xek43x55wrvg27f47us5a3zzp",
+                    "txid": "f0496c48cc22eefb7b308b4c549eda6219cc85a4c203930c0dec07e36ebb7512",
+                    "value": 10000,
+                    "spending_tx": "vout_f0496c48cc22eefb7b308b4c549eda6219cc85a4c203930c0dec07e36ebb7512_23",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "8": {
+                    "address": "bc1pjzvscz7f9egua3gztn80vqeefcka5dklzys3jjqty0fdfs5pt46q7yam7u",
+                    "txid": "ad52c33aae6269f766e370ad555d1a89b292746700c680f7cb04ec71eb4cd360",
+                    "value": 8192,
+                    "spending_tx": "vout_ad52c33aae6269f766e370ad555d1a89b292746700c680f7cb04ec71eb4cd360_21",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "9": {
+                    "address": "bc1qwg28nm6trqe72uc3cnj0ym3tt2ly98zaqynam0",
+                    "txid": "8b683e8c15da5b1220f2826c730bf35d8c04284eb7f74b8482f2386a95d5c7d3",
+                    "value": 6561,
+                    "spending_tx": "vout_8b683e8c15da5b1220f2826c730bf35d8c04284eb7f74b8482f2386a95d5c7d3_10",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "10": {
+                    "address": "bc1p3fdelsq04csm74nf3ypdggwnvhhf2muyz2u6pgrgxflelxnftweqa77nzm",
+                    "txid": "3bc92fd24523cfea59598526a4efbd4caf457100fc3bf18bd22367b1d86cf827",
+                    "value": 5000,
+                    "spending_tx": "vout_3bc92fd24523cfea59598526a4efbd4caf457100fc3bf18bd22367b1d86cf827_16",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "11": {
+                    "address": "bc1psqa22k4wgnm2wzerkgvdmc3yy3lksv4cglvfz3vgx6wp7j0ma54q85lqws",
+                    "txid": "2b8e2ec9ca3cdc4697225cb663debb2704c38578bc33e246ec4252a0aab9d38d",
+                    "value": 5000,
+                    "spending_tx": "vout_2b8e2ec9ca3cdc4697225cb663debb2704c38578bc33e246ec4252a0aab9d38d_22",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                },
+                "12": {
+                    "address": "bc1qzljzvnctxjnaqtup75cs9lyzrgr6e3zfa5ctf7",
+                    "txid": "8b683e8c15da5b1220f2826c730bf35d8c04284eb7f74b8482f2386a95d5c7d3",
+                    "value": 5000,
+                    "spending_tx": "vout_8b683e8c15da5b1220f2826c730bf35d8c04284eb7f74b8482f2386a95d5c7d3_12",
+                    "wallet_name": "real_unknown",
+                    "mix_event_type": "MIX_REMIX"
+                }
+            },
+            "outputs": {
+                "0": {
+                    "address": "bc1qrqcryjzpxk5q6qz4gffc3vaeu64t5jptp7h7ka",
+                    "value": 118098,
+                    "wallet_name": "real_unknown"
+                },
+                "1": {
+                    "address": "bc1qswpgktgjfjqc4hw7yhutsngy48g7h0j4k80yzz",
+                    "value": 118098,
+                    "wallet_name": "real_unknown"
+                },
+                "2": {
+                    "address": "bc1qh9ct6pparjwauazpuwrcs0qvesz4ahr98h0suf",
+                    "value": 118098,
+                    "wallet_name": "real_unknown"
+                },
+                "3": {
+                    "address": "bc1q64zsn6ysdn5cpjd9ln75tpr2h6nslc8mqyfqqh",
+                    "value": 118098,
+                    "wallet_name": "real_unknown"
+                },
+                "4": {
+                    "address": "bc1p708q33zlqrewf546c2t364tgcrh3haljrq7yrxkeez56g5aqksvsdlhyn6",
+                    "value": 118098,
+                    "wallet_name": "real_unknown"
+                },
+                "5": {
+                    "address": "bc1qp3zr5v4nd8pfu63hpc3dz6zctkf0vepam0gfj5",
+                    "value": 50000,
+                    "wallet_name": "real_unknown"
+                },
+                "6": {
+                    "address": "bc1qx8sl4aa6xvxx0h5775j7u4pexdjn2q4hn72ew3",
+                    "value": 50000,
+                    "wallet_name": "real_unknown"
+                },
+                "7": {
+                    "address": "bc1qyfjqdw2n3ayzp5fuqsaytqjvhchsss9lq0srk3",
+                    "value": 10000,
+                    "wallet_name": "real_unknown"
+                },
+                "8": {
+                    "address": "bc1qxuwxlds4zj59z956elma4f3ynuxm4lfj5qnj2z",
+                    "value": 10000,
+                    "wallet_name": "real_unknown"
+                },
+                "9": {
+                    "address": "bc1qhpf0rwqjftk4axay8ekxl2rs9vnjtyrahlxyhn",
+                    "value": 10000,
+                    "wallet_name": "real_unknown"
+                },
+                "10": {
+                    "address": "bc1p8086fhpkkkdpc0fegw3rgfk59cg8gnsy8lxrr9xjqeu5kgztkzvsfwu78w",
+                    "value": 10000,
+                    "wallet_name": "real_unknown"
+                },
+                "11": {
+                    "address": "bc1pg8823tjdy5pxa06qk2updgupdppyk8zafzzt660pw9m9j2ks3rcq42lv4j",
+                    "value": 10000,
+                    "wallet_name": "real_unknown"
+                },
+                "12": {
+                    "address": "bc1pmqyjxxfpfenlttsxznxzknhprrfrhwzm8004ney3gkyy2fgeytksx38qfv",
+                    "value": 10000,
+                    "wallet_name": "real_unknown"
+                },
+                "13": {
+                    "address": "bc1pmvptzfxpx6y5g33c6l28fzc46nygfcaedv5gfafwxtddtf5g7p9scckgqx",
+                    "value": 10000,
+                    "wallet_name": "real_unknown"
+                },
+                "14": {
+                    "address": "bc1qshkk73xjjp5nmxrvqhsveu4ejf6cp073866yr7",
+                    "value": 6561,
+                    "wallet_name": "real_unknown"
+                }
+            }
+        }
+    }
+}

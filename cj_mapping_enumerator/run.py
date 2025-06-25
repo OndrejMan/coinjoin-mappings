@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument("--min_mining_fee", type=int)
     parser.add_argument("--max_mining_fee", type=int)
     parser.add_argument("-t", "--timeout", help="Timeout for one transaction in seconds", default=60, type=int)
-    parser.add_argument("--mode", help="Choose mode 'numerical' or 'all' mappings", default="numeric")
+    parser.add_argument("--mode", help="Choose mode 'numeric' or 'all' mappings", default="numeric")
     parser.add_argument("--linked_addresses", type=str, help="Provide groups of linked addresses, e.g. [['address1', 'address2'], ['address3', 'address4', 'address5']]")
 
     args = parser.parse_args()
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         if args.mode == "numeric":
             def callable_enum(result_queue):
                 c = 0
-                for m in get_numeric_mappings(inputs, outputs, max_error=args.max_decomposition_fee):
+                for m in get_numeric_mappings(inputs, outputs, max_error=max_error):
                     c += 1
                 result_queue.put(c)
 
