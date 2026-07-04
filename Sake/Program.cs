@@ -1,208 +1,144 @@
+using System.Text.Json;
 using NBitcoin;
 using Sake;
-using WalletWasabi.Extensions;
-using Newtonsoft.Json.Linq;
 
-static (int, int) MatchedOutputs(List<ulong> outputs1, List<ulong> outputs2) {
-    int ol = outputs1.Count();
-    outputs2.ForEach(v => outputs1.Remove(v));
-    int nl = outputs1.Count();
-    return (ol-nl, ol);
+static Dictionary<string, string> Options(string[] args)
+{
+    var values = new Dictionary<string, string>();
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (!args[i].StartsWith("--") || i + 1 >= args.Length) throw new ArgumentException($"Invalid argument: {args[i]}");
+        values[args[i]] = args[++i];
+    }
+    return values;
 }
 
-static bool compareOutputs(List<ulong> outputs1, List<ulong> outputs2) {
-    if (outputs1.Count() != outputs2.Count()) 
-        return false;
-    
-    outputs1.Sort();
-    outputs2.Sort();
+static int MatchedOutputs(IEnumerable<ulong> generated, IEnumerable<ulong> actual)
+{
+    var remaining = generated.ToList();
+    var matched = 0;
+    foreach (var value in actual)
+    {
+        var index = remaining.IndexOf(value);
+        if (index >= 0) { matched++; remaining.RemoveAt(index); }
+    }
+    return matched;
+}
 
-    bool change_found = false;
-
-    for (var i = 0; i < outputs1.Count(); i++) {
-        if (outputs1[i] == outputs2[i]) {
-            continue;
-        }
-        if (change_found) { // at most one change output
-            return false;
-        }
-        ulong difference = outputs1[i] > outputs2[i] ? outputs1[i]-outputs2[i] : outputs2[i]-outputs1[i];
-        if (difference < 100) { // allow a small error in the change output
-            change_found = true;
-            continue;
-        }
-        return false;
+static bool OutputsMatchWithChangeTolerance(IEnumerable<ulong> expected, IEnumerable<ulong> candidate)
+{
+    var expectedValues = expected.OrderBy(value => value).ToList();
+    var candidateValues = candidate.OrderBy(value => value).ToList();
+    if (expectedValues.Count != candidateValues.Count) return false;
+    var changedOutputFound = false;
+    for (var index = 0; index < expectedValues.Count; index++)
+    {
+        if (expectedValues[index] == candidateValues[index]) continue;
+        if (changedOutputFound) return false;
+        var difference = expectedValues[index] > candidateValues[index]
+            ? expectedValues[index] - candidateValues[index]
+            : candidateValues[index] - expectedValues[index];
+        if (difference >= 100) return false;
+        changedOutputFound = true;
     }
     return true;
 }
 
-static void sake_vs_emulations() {
-    string path = "./data/coinjoins.json";
+var options = Options(args);
+var unknownOptions = options.Keys.Except(new[] { "--input", "--output", "--seed", "--samples" }).ToList();
+if (unknownOptions.Count > 0) throw new ArgumentException($"Unknown option: {unknownOptions[0]}");
+if (!options.TryGetValue("--input", out var input)) throw new ArgumentException("--input is required");
+if (!options.TryGetValue("--output", out var output)) throw new ArgumentException("--output is required");
+var seed = options.TryGetValue("--seed", out var seedText) ? int.Parse(seedText) : 20260704;
+var samples = options.TryGetValue("--samples", out var sampleText) ? int.Parse(sampleText) : 99;
+if (samples <= 0) throw new ArgumentOutOfRangeException("--samples", "must be greater than zero");
 
-    long matched_outputs = 0;
-    long total_outputs = 0;
-    long wallet_matches = 0;
-    long total_wallets = 0;
-    long perfect_matches = 0;
-    long total_coinjoins = 0;
-
-    long same_out_len = 0;
-
-    StreamWriter emuoutputs = new StreamWriter("emuoutputs");
-    StreamWriter sakeoutputs = new StreamWriter("sakeoutputs");
-
-    var parser = new JsonParser(path);
-
-    bool cj_exists = true;
-
-    while (cj_exists)
-    {   
-        if (parser.IsBlame()) {
-            cj_exists = parser.NextCJ();
-            continue;
+var parser = new JsonParser(input);
+var transactions = new Dictionary<string, object>();
+long matchedOutputs = 0, totalOutputs = 0, walletMatches = 0, totalWallets = 0, perfectMatches = 0,
+    lengthMatches = 0;
+var hasNext = parser.HasCurrent;
+var index = 0;
+while (hasNext)
+{
+    if (!parser.IsBlame())
+    {
+        var txid = parser.GetTXID();
+        var feeRate = parser.GetFeeRate();
+        var (groups, effectiveFeeRate, inputNames) = parser.GetInputGroups(feeRate);
+        var (actualGroups, outputNames) = parser.GetOutputGroups();
+        var mixer = new Mixer(effectiveFeeRate, Money.Satoshis(5000m), Money.Coins(43000m),
+            new List<ScriptType> { ScriptType.P2WPKH }, new Random(seed + index));
+        var generated = mixer.CompleteMix(groups).Select(values => values.ToList()).ToList();
+        var txMatched = 0;
+        var txOutputs = generated.Sum(group => group.Count);
+        var txActualOutputs = actualGroups.Sum(group => group.Count);
+        var txWalletMatches = 0;
+        var txLengthMatches = 0;
+        for (var groupIndex = 0; groupIndex < generated.Count; groupIndex++)
+        {
+            var generatedGroup = generated[groupIndex];
+            var actualGroup = groupIndex < actualGroups.Count ? actualGroups[groupIndex] : new List<ulong>();
+            var matches = MatchedOutputs(generatedGroup, actualGroup);
+            if (generatedGroup.Count == actualGroup.Count) txLengthMatches++;
+            txMatched += matches;
+            if (matches == generatedGroup.Count) txWalletMatches++;
         }
-
-        var allowedOutputTypes = new List<ScriptType> {ScriptType.P2WPKH};
-
-        var min = Money.Satoshis(5000m);
-        var max = Money.Coins(43000m);
-
-        var random = new Random();
-        var fee_rate = parser.GetFeeRate();
-        (var groups, var feeRate, _) = parser.GetInputGroups(fee_rate); 
-
-        var mixer = new Mixer(feeRate, min, max, allowedOutputTypes, random);
-
-        ulong [][] outputGroups = Array.Empty<ulong[]>();
-
-        outputGroups = mixer.CompleteMix(groups).Select(x => x.ToArray()).ToArray();
-
-        (var real_output_groups, _) = parser.GetOutputGroups();
-        bool cj_match = true;
-        for (int i = 0; i < outputGroups.Count(); i++) {
-            if (outputGroups[i].Count() == real_output_groups[i].Count()) {
-                same_out_len++;
-            }
-            string str_sakeoutputs = string.Join(", ", outputGroups[i].Select(d => d));
-            sakeoutputs.WriteLine(str_sakeoutputs);
-            string str_realoutputs = string.Join(", ", real_output_groups[i].Select(d => d));
-            emuoutputs.WriteLine(str_realoutputs);
-
-
-            var (matched, all) = MatchedOutputs(outputGroups[i].ToList(), real_output_groups[i]);
-            if (matched == all) {
-                wallet_matches++;
-            } else {
-                cj_match = false;
-            }
-            total_wallets++;
-            total_outputs += all;
-            matched_outputs += matched;
-        }
-        sakeoutputs.WriteLine();
-        emuoutputs.WriteLine();
-        if (cj_match) {
-            perfect_matches++;
-        }
-        total_coinjoins++;
-
-        cj_exists = parser.NextCJ();
-    }
-    
-    var out_perc = (matched_outputs*100)/total_outputs;
-    var wall_perc = (wallet_matches*100)/total_wallets;
-    var perfect_perc = (perfect_matches*100)/total_coinjoins;
-    var len_perc = (same_out_len*100)/total_wallets;
-    Console.WriteLine($"Single output matches {matched_outputs} of {total_outputs}, i.e., {out_perc} %");
-    Console.WriteLine($"Wallet matches {wallet_matches} of {total_wallets}, i.e., {wall_perc} %");
-    Console.WriteLine($"Full CoinJoin matches {perfect_matches} of {total_coinjoins}, i.e., {perfect_perc} %");
-    Console.WriteLine($"Length matches {same_out_len} of {total_wallets}, i.e., {len_perc} %");
-}
-
-static void decomposition_options() {
-    StreamWriter options = new StreamWriter("options");
-    StreamWriter topk = new StreamWriter("topk");
-
-    string path = "./data/coinjoins.json";
-
-    var parser = new JsonParser(path);
-    bool cj_exists = true;
-
-    while (cj_exists)
-    {   
-        if (parser.IsBlame()) {
-            cj_exists = parser.NextCJ();
-            continue;
-        }
-
-        var allowedOutputTypes = new List<ScriptType> {ScriptType.P2WPKH, ScriptType.Taproot}; 
-
-        var min = Money.Satoshis(5000m);
-        var max = Money.Coins(43000m);
-        var fee_rate = parser.GetFeeRate();
-        Console.Write("fee rate:");
-        Console.WriteLine(fee_rate.SatoshiPerByte);
-        (var groups, var feeRate, var in_group_names) = parser.GetInputGroups(fee_rate); 
-        
-        var random = new Random();
-        foreach (var w in in_group_names) {
-            var countingList = new Dictionary<string, int>();
-            var str_to_list = new Dictionary<string, List<ulong>>();
-
-            for (var i = 1; i < 100; i++) {
-                var mixer = new Mixer(feeRate, min, max, allowedOutputTypes, random);
-                var w_index = in_group_names.IndexOf(w);
-                var outputs = mixer.SingleWalletMix(groups[w_index], groups.Where((v,j) => j != w_index).SelectMany(v => v).ToList());
-
-                foreach (var o in outputs) {
-                    var output = o.ToList();
-                    output.Sort((x, y) => y.CompareTo(x));
-                    var str_output = string.Join(",", output);
-                    if( countingList.ContainsKey(str_output))
-                        countingList[str_output]++;
-                    else {
-                        countingList.Add(str_output, 1 );
-                        str_to_list.Add(str_output, output);
-                    }
+        var decomposition = new Dictionary<string, object>();
+        foreach (var wallet in inputNames)
+        {
+            var walletIndex = inputNames.IndexOf(wallet);
+            var counts = new Dictionary<string, int>();
+            var random = new Random(seed + index * 1009 + walletIndex);
+            for (var sample = 0; sample < samples; sample++)
+            {
+                var sampleMixer = new Mixer(effectiveFeeRate, Money.Satoshis(5000m), Money.Coins(43000m),
+                    new List<ScriptType> { ScriptType.P2WPKH, ScriptType.Taproot }, random);
+                foreach (var values in sampleMixer.SingleWalletMix(groups[walletIndex],
+                    groups.Where((_, other) => other != walletIndex).SelectMany(value => value).ToList()))
+                {
+                    var key = string.Join(",", values.OrderByDescending(value => value));
+                    counts[key] = counts.GetValueOrDefault(key) + 1;
                 }
             }
-
-            (var real_output_groups, var out_group_names) = parser.GetOutputGroups();
-            var w_out_index = out_group_names.IndexOf(w);
-
-            var real_gr = real_output_groups[w_out_index];
-            real_gr.Sort((x, y) => y.CompareTo(x));
-
-            var counts = countingList.ToList();
-            counts.Sort((x, y) => y.Value.CompareTo(x.Value));
-            Console.Write("Options:");
-            Console.WriteLine(counts.Count());
-            options.WriteLine(counts.Count());
-            var j = 1;
-            var top = 99999;
-            Console.WriteLine(string.Join(",", real_gr));
-            foreach ((var x, var y) in counts){
-                Console.WriteLine(x);
-                if (compareOutputs(real_gr, str_to_list[x])) {
-                    top = j;
-                    break;
-                }
-                j++;
+            var outputIndex = outputNames.IndexOf(wallet);
+            var ranked = counts.OrderByDescending(pair => pair.Value).ThenBy(pair => pair.Key).ToList();
+            int? rank = null;
+            if (outputIndex >= 0)
+            {
+                var rankIndex = ranked.FindIndex(pair => OutputsMatchWithChangeTolerance(
+                    actualGroups[outputIndex], pair.Key.Split(',').Select(ulong.Parse)));
+                if (rankIndex >= 0) rank = rankIndex + 1;
             }
-            Console.Write("top ");
-            Console.WriteLine(top);
-            topk.WriteLine(top);
-
+            decomposition[wallet] = new { options = counts.Count, actual_rank = rank == 0 ? null : rank };
         }
-
-        cj_exists = parser.NextCJ();
+        var fullMatch = txWalletMatches == generated.Count;
+        transactions[txid] = new { fee_rate_sat_per_byte = feeRate.SatoshiPerByte,
+            matched_outputs = txMatched, total_outputs = txOutputs, actual_outputs = txActualOutputs,
+            wallet_matches = txWalletMatches, total_wallets = generated.Count,
+            actual_wallets = actualGroups.Count,
+            length_matches = txLengthMatches,
+            full_coinjoin_match = fullMatch, decomposition };
+        matchedOutputs += txMatched; totalOutputs += txOutputs;
+        walletMatches += txWalletMatches; totalWallets += generated.Count;
+        lengthMatches += txLengthMatches;
+        if (fullMatch) perfectMatches++;
+        index++;
     }
-    
-    topk.Flush();
-    topk.Close();
-    options.Flush();
-    topk.Close();
+    hasNext = parser.NextCJ();
 }
 
-sake_vs_emulations();
-decomposition_options();
+var result = new { schema_version = "1.0", tool = "sake", seed, samples,
+    summary = new { transactions = transactions.Count, matched_outputs = matchedOutputs,
+        total_outputs = totalOutputs, output_match_rate = totalOutputs == 0 ? null : (double?)matchedOutputs / totalOutputs,
+        wallet_matches = walletMatches, total_wallets = totalWallets,
+        wallet_match_rate = totalWallets == 0 ? null : (double?)walletMatches / totalWallets,
+        length_matches = lengthMatches,
+        length_match_rate = totalWallets == 0 ? null : (double?)lengthMatches / totalWallets,
+        full_coinjoin_matches = perfectMatches,
+        full_coinjoin_match_rate = transactions.Count == 0 ? null : (double?)perfectMatches / transactions.Count },
+    transactions };
+var rendered = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
+File.WriteAllText(output, rendered + Environment.NewLine);
+Console.WriteLine(rendered);

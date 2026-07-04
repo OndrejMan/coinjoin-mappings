@@ -1,0 +1,7 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY cj_mapping_enumerator/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY cj_mapping_enumerator/ .
+RUN python3 -m unittest discover -s tests -p 'test_*.py'
+ENTRYPOINT ["python3", "/app/run.py"]

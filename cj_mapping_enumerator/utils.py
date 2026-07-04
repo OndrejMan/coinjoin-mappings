@@ -3,6 +3,7 @@ import multiprocessing
 from math import inf
 from collections import defaultdict
 import time
+from queue import Empty
 
 def guess_script(address):
 		if (len(address) > 60):
@@ -114,7 +115,11 @@ def run_with_timeout(timeout, func, *args, **kwargs):
         process.join()  # Ensure cleanup
         result = inf
     else:
-         result = result_queue.get()
+        try:
+            result = result_queue.get(timeout=1)
+        except Empty as error:
+            raise RuntimeError(
+                f"enumeration worker exited with code {process.exitcode} without returning a result"
+            ) from error
 
     return total_time, result
-

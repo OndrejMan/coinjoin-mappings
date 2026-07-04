@@ -1,0 +1,5 @@
+.git
+**/__pycache__
+**/results
+Sake/bin
+Sake/obj

@@ -1,6 +1,9 @@
 # CoinJoin mappings enumerator
 
-This tool serves for enumeration of Wasabi 2.x CoinJoin mappings. Use `run.py` to learn the number of mappings of a specified coinjoin. 
+This tool enumerates Wasabi 2.x CoinJoin mappings. By default it prints structured
+JSON; use `--output PATH` to preserve the same result in a file. Each transaction
+gets a 60-second attempt followed by one 600-second retry, configurable through
+`--timeout` and `--retry-timeout`.
 
 ### Running 
 Install requirements using:
@@ -40,7 +43,11 @@ options:
   --max_mining_fee MAX_MINING_FEE
   -t TIMEOUT, --timeout TIMEOUT
                         Timeout for one transaction in seconds
-  --mode MODE           Choose mode 'numerical' or 'all' mappings
+  --mode {numeric,all}  Choose numeric-value mappings or all concrete mappings
+  -o OUTPUT, --output OUTPUT
+                        Write structured JSON to this path
+  --retry-timeout RETRY_TIMEOUT
+                        Timeout used for the single retry
   --linked_addresses LINKED_ADDRESSES
                         Provide groups of linked addresses, e.g. [['address1', 'address2'], ['address3', 'address4', 'address5']]
 ```

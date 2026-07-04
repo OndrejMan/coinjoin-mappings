@@ -9,6 +9,7 @@ public class JsonParser
 	private List<string> txids;
 	private JObject CoinJoins;
 	public int Index;
+	public bool HasCurrent => txids.Count > 0;
 	public JsonParser(string Path)
 	{
 		var text = File.ReadAllText(Path);
