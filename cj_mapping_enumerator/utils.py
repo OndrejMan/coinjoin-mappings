@@ -5,19 +5,24 @@ from collections import defaultdict
 import time
 from queue import Empty
 
+def is_taproot(address):
+    # Witness v1 (taproot) bech32m addresses start with <hrp>1p. A pure length
+    # check misclassified 62-character P2WSH addresses as taproot.
+    return address.lower().startswith(("bc1p", "tb1p", "bcrt1p"))
+
 def guess_script(address):
-		if (len(address) > 60):
-			return "P2tr"		
-		return "P2wpkh"
+    if is_taproot(address):
+        return "P2tr"
+    return "P2wpkh"
 
 def input_vsize(address):
-    if (len(address) > 60):
-        return P2trInputVirtualSize	
+    if is_taproot(address):
+        return P2trInputVirtualSize
     return P2wpkhInputVirtualSize
 
 def output_vsize(address):
-    if (len(address) > 60):
-        return P2trOutputVirtualSize	
+    if is_taproot(address):
+        return P2trOutputVirtualSize
     return P2wpkhOutputVirtualSize
 
 
