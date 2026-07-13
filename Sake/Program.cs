@@ -1,3 +1,6 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using NBitcoin;
 using Sake;
@@ -44,6 +47,12 @@ static bool OutputsMatchWithChangeTolerance(IEnumerable<ulong> expected, IEnumer
     return true;
 }
 
+static int StableSeed(int seed, string txid, string scope)
+{
+    var material = Encoding.UTF8.GetBytes($"{seed}:{txid}:{scope}");
+    return BinaryPrimitives.ReadInt32LittleEndian(SHA256.HashData(material)) & int.MaxValue;
+}
+
 var options = Options(args);
 var unknownOptions = options.Keys.Except(new[] { "--input", "--output", "--seed", "--samples" }).ToList();
 if (unknownOptions.Count > 0) throw new ArgumentException($"Unknown option: {unknownOptions[0]}");
@@ -58,7 +67,6 @@ var transactions = new Dictionary<string, object>();
 long matchedOutputs = 0, totalOutputs = 0, walletMatches = 0, totalWallets = 0, perfectMatches = 0,
     lengthMatches = 0;
 var hasNext = parser.HasCurrent;
-var index = 0;
 while (hasNext)
 {
     if (!parser.IsBlame())
@@ -68,7 +76,8 @@ while (hasNext)
         var (groups, effectiveFeeRate, inputNames) = parser.GetInputGroups(feeRate);
         var (actualGroups, outputNames) = parser.GetOutputGroups();
         var mixer = new Mixer(effectiveFeeRate, Money.Satoshis(5000m), Money.Coins(43000m),
-            new List<ScriptType> { ScriptType.P2WPKH }, new Random(seed + index));
+            new List<ScriptType> { ScriptType.P2WPKH, ScriptType.Taproot },
+            new Random(StableSeed(seed, txid, "full")));
         var generated = mixer.CompleteMix(groups).Select(values => values.ToList()).ToList();
         var txMatched = 0;
         var txOutputs = generated.Sum(group => group.Count);
@@ -89,7 +98,7 @@ while (hasNext)
         {
             var walletIndex = inputNames.IndexOf(wallet);
             var counts = new Dictionary<string, int>();
-            var random = new Random(seed + index * 1009 + walletIndex);
+            var random = new Random(StableSeed(seed, txid, $"wallet:{wallet}"));
             for (var sample = 0; sample < samples; sample++)
             {
                 var sampleMixer = new Mixer(effectiveFeeRate, Money.Satoshis(5000m), Money.Coins(43000m),
@@ -123,7 +132,6 @@ while (hasNext)
         walletMatches += txWalletMatches; totalWallets += generated.Count;
         lengthMatches += txLengthMatches;
         if (fullMatch) perfectMatches++;
-        index++;
     }
     hasNext = parser.NextCJ();
 }

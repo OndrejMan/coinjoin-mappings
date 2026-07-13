@@ -22,6 +22,9 @@ def exits_without_result(_queue):
 
 
 class EnumeratorTest(unittest.TestCase):
+    def test_schema_version_records_the_script_contract_change(self):
+        self.assertEqual(run.ENUMERATOR_SCHEMA_VERSION, "1.1")
+
     def test_native_witness_script_types_are_distinguished(self):
         self.assertEqual(guess_script(P2WPKH_ADDRESS), "P2wpkh")
         self.assertEqual(guess_script(P2WSH_ADDRESS), "P2wsh")
@@ -53,6 +56,20 @@ class EnumeratorTest(unittest.TestCase):
         self.assertEqual(result["status"], "error")
         self.assertTrue(result["retried"])
         self.assertEqual(result["attempts"], [timeout, error])
+
+    def test_timing_is_omitted_by_default(self):
+        with mock.patch.object(run, "run_with_timeout", return_value=(1.25, {"count": 3})) as runner:
+            result = run.enumerate_once([], [], "numeric", 6000, 60)
+
+        self.assertIsNone(result["duration_seconds"])
+        self.assertEqual(result["mapping_count"], 3)
+        self.assertIs(runner.call_args.args[1], run.enumeration_worker)
+
+    def test_timing_can_be_requested_explicitly(self):
+        with mock.patch.object(run, "run_with_timeout", return_value=(1.25, {"count": 3})):
+            result = run.enumerate_once([], [], "numeric", 6000, 60, include_timing=True)
+
+        self.assertEqual(result["duration_seconds"], 1.25)
 
     def test_all_mode_does_not_expand_tolerance_for_fee_range(self):
         self.assertEqual(run.mapping_max_error("all", 6000, 4, 7), 6000)

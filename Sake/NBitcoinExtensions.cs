@@ -8,6 +8,7 @@ public static class NBitcoinExtensions
     public const int P2wpkhInputVirtualSize = 69;
     public const int P2pkhInputSizeInBytes = 145;
     public const int P2wpkhOutputVirtualSize = 31;
+    public const int P2wshOutputVirtualSize = 43;
 
     public const int P2trInputVirtualSize = 58;
     public const int P2trOutputVirtualSize = 43;
@@ -22,6 +23,8 @@ public static class NBitcoinExtensions
         scriptType switch
         {
             ScriptType.P2WPKH => P2wpkhInputVirtualSize,
+            ScriptType.P2WSH => throw new NotSupportedException(
+                "P2WSH input size depends on its witness script and cannot be inferred from an address."),
             ScriptType.Taproot => P2trInputVirtualSize,
             _ => throw new NotImplementedException($"Size estimation isn't implemented for provided script type.")
         };
@@ -30,6 +33,7 @@ public static class NBitcoinExtensions
         scriptType switch
         {
             ScriptType.P2WPKH => P2wpkhOutputVirtualSize,
+            ScriptType.P2WSH => P2wshOutputVirtualSize,
             ScriptType.Taproot => P2trOutputVirtualSize,
             _ => throw new NotImplementedException($"Size estimation isn't implemented for provided script type.")
         };
@@ -55,7 +59,7 @@ public static class NBitcoinExtensions
 
     public static ScriptType? TryGetScriptType(this Script script)
     {
-        foreach (ScriptType scriptType in new ScriptType[] { ScriptType.P2WPKH, ScriptType.P2PKH, ScriptType.P2PK, ScriptType.Taproot })
+        foreach (ScriptType scriptType in new ScriptType[] { ScriptType.P2WPKH, ScriptType.P2WSH, ScriptType.P2PKH, ScriptType.P2PK, ScriptType.Taproot })
         {
             if (script.IsScriptType(scriptType))
             {

@@ -40,11 +40,24 @@ public class JsonParser
 		return (long)(0.003*(double)amount);
 	}
 
-	ScriptType GuessScript(string address) {
-		if (address.Length > 60) {
+	public static ScriptType GuessScript(string address) {
+		var separator = address.LastIndexOf('1');
+		if (separator < 1 || separator + 1 >= address.Length) {
+			throw new FormatException($"Unsupported address format: {address}");
+		}
+
+		var witnessDataLength = address.Length - separator - 1;
+		var witnessVersion = char.ToLowerInvariant(address[separator + 1]);
+		if (witnessVersion == 'q' && witnessDataLength == 39) {
+			return ScriptType.P2WPKH;
+		}
+		if (witnessVersion == 'p' && witnessDataLength == 59) {
 			return ScriptType.Taproot;
 		}
-		return ScriptType.P2WPKH;
+		if (witnessVersion == 'q' && witnessDataLength == 59) {
+			return ScriptType.P2WSH;
+		}
+		throw new NotSupportedException($"Unsupported witness address: {address}");
 	}
 
 	long Vsize(IEnumerable<string> in_addresses, IEnumerable<string> out_addresses) {

@@ -17,7 +17,9 @@ docker build -f Dockerfile.sake -t coinjoin-mappings-sake .
 
 The enumerator accepts `coinjoin_tx_info.json`, retries timed-out transactions,
 and writes structured JSON with `--output`. Sake accepts `--input`, `--output`,
-and a deterministic `--seed` (default `20260704`).
+and a repeatable `--seed` (default `20260704`). See the
+[input, runtime, and result contract](docs/input-runtime-result-contract.md)
+before comparing the two tools.
 
 Pushes to `main` that change either implementation or Dockerfile trigger
 `.github/workflows/docker-images.yml`. The workflow publishes multi-architecture
@@ -31,20 +33,26 @@ can be started manually with GitHub Actions `workflow_dispatch`.
 
 ## Output formats
 
-Both tools emit deterministic JSON (`sort_keys`, stable indentation) with
-`"schema_version": "1.0"` so downstream consumers can detect format changes.
+Both tools emit versioned structured JSON so downstream consumers can detect
+format changes. The enumerator currently emits schema `1.1`; Sake emits schema
+`1.0`. The enumerator sorts keys and omits
+measured timing by default (`duration_seconds` is `null`); opt into
+non-deterministic measurements with `--include-timing`. Sake derives random
+streams from the seed plus transaction/wallet identity, so input object order
+does not affect seeded results.
 
 ### Enumerator (`enumerator.json`)
 
 ```
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "tool": "coinjoin-mapping-enumerator",
   "parameters": { mining_fee_rate, coordination_fee_rate, max_decomposition_fee,
                   effective_max_error, min_mining_fee, max_mining_fee,
-                  linked_addresses, mode, timeout_seconds, retry_timeout_seconds },
+                  linked_addresses, mode, timeout_seconds, retry_timeout_seconds,
+                  include_timing },
   "summary": { "transactions": N, "completed": N, "timed_out": N, "errors": N,
-               "duration_seconds": float },
+               "duration_seconds": float | null },
   "transactions": {
     "<txid>": {
       "status": "complete" | "timeout" | "error",
@@ -79,8 +87,11 @@ the stage).
 
 Sake replays each non-blame CoinJoin's input groups through the modified
 Wasabi decomposition algorithm with a deterministic per-transaction RNG
-(`seed + tx index`) and reports how closely the simulated output
-decomposition matches the observed one.
+(SHA-256-derived from `seed`, transaction id, and scope) and reports how closely
+the simulated output decomposition matches the observed one. Sake can parse and
+size observed P2WPKH, P2WSH, and P2TR outputs, while generated replay
+decompositions are limited to P2WPKH and P2TR. P2WSH inputs are rejected because
+their virtual size cannot be inferred from an address.
 
 ### Combined stage output
 
