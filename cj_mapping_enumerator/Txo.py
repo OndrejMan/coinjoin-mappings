@@ -4,6 +4,8 @@ from math import floor, ceil
 P2wpkhInputVirtualSize = 69
 P2wpkhOutputVirtualSize = 31
 
+P2wshOutputVirtualSize = 43
+
 P2trInputVirtualSize = 58
 P2trOutputVirtualSize = 43
 
@@ -22,6 +24,12 @@ def effective_value(type, value, script_type, mfee_rate, cfee_rate):
         
         elif script_type == "P2tr":
             evalue -= floor(mfee_rate*P2trInputVirtualSize)
+
+        elif script_type == "P2wsh":
+            raise ValueError(
+                "P2WSH input virtual size depends on its witness script "
+                "and cannot be inferred from the address"
+            )
     
     elif type == "output":
 
@@ -30,6 +38,9 @@ def effective_value(type, value, script_type, mfee_rate, cfee_rate):
         
         elif script_type == "P2tr":
             evalue += floor(mfee_rate*P2trOutputVirtualSize)
+
+        elif script_type == "P2wsh":
+            evalue += floor(mfee_rate*P2wshOutputVirtualSize)
 
     else:
         raise Exception("Invalid Txo type") 

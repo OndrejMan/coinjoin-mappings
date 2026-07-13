@@ -1,28 +1,86 @@
-from Txo import Txo, P2trInputVirtualSize, P2trOutputVirtualSize, P2wpkhInputVirtualSize, P2wpkhOutputVirtualSize
+from Txo import (
+    Txo,
+    P2trInputVirtualSize,
+    P2trOutputVirtualSize,
+    P2wpkhInputVirtualSize,
+    P2wpkhOutputVirtualSize,
+    P2wshOutputVirtualSize,
+)
 import multiprocessing
 from math import inf
 from collections import defaultdict
 import time
 from queue import Empty
 
+
+BECH32_HRPS = ("bc", "tb", "bcrt")
+BECH32_WITNESS_ADDRESS_OVERHEAD = 8  # separator, version, and six-character checksum
+WITNESS_20_BYTE_PROGRAM_ENCODED_LENGTH = 32
+WITNESS_32_BYTE_PROGRAM_ENCODED_LENGTH = 52
+
+
+def _matches_witness_address(address, version_character, encoded_program_length):
+    normalized = address.lower()
+    return any(
+        normalized.startswith(f"{hrp}1{version_character}")
+        and len(normalized)
+        == len(hrp) + encoded_program_length + BECH32_WITNESS_ADDRESS_OVERHEAD
+        for hrp in BECH32_HRPS
+    )
+
+
 def is_taproot(address):
-    # Witness v1 (taproot) bech32m addresses start with <hrp>1p. A pure length
-    # check misclassified 62-character P2WSH addresses as taproot.
-    return address.lower().startswith(("bc1p", "tb1p", "bcrt1p"))
+    return _matches_witness_address(
+        address,
+        "p",
+        WITNESS_32_BYTE_PROGRAM_ENCODED_LENGTH,
+    )
+
+
+def is_p2wsh(address):
+    return _matches_witness_address(
+        address,
+        "q",
+        WITNESS_32_BYTE_PROGRAM_ENCODED_LENGTH,
+    )
+
+
+def is_p2wpkh(address):
+    return _matches_witness_address(
+        address,
+        "q",
+        WITNESS_20_BYTE_PROGRAM_ENCODED_LENGTH,
+    )
+
 
 def guess_script(address):
     if is_taproot(address):
         return "P2tr"
-    return "P2wpkh"
+    if is_p2wsh(address):
+        return "P2wsh"
+    if is_p2wpkh(address):
+        return "P2wpkh"
+    raise ValueError(f"Unsupported or invalid witness address: {address}")
+
 
 def input_vsize(address):
-    if is_taproot(address):
+    script_type = guess_script(address)
+    if script_type == "P2tr":
         return P2trInputVirtualSize
-    return P2wpkhInputVirtualSize
+    if script_type == "P2wpkh":
+        return P2wpkhInputVirtualSize
+    raise ValueError(
+        "P2WSH input virtual size depends on its witness script "
+        "and cannot be inferred from the address"
+    )
+
 
 def output_vsize(address):
-    if is_taproot(address):
+    script_type = guess_script(address)
+    if script_type == "P2tr":
         return P2trOutputVirtualSize
+    if script_type == "P2wsh":
+        return P2wshOutputVirtualSize
     return P2wpkhOutputVirtualSize
 
 

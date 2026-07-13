@@ -8,7 +8,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import run
-from utils import run_with_timeout
+from Txo import P2wshOutputVirtualSize, Txo
+from utils import guess_script, input_vsize, output_vsize, run_with_timeout
+
+
+P2WPKH_ADDRESS = "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+P2WSH_ADDRESS = "bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3"
+P2TR_ADDRESS = "bc1pzj8m2jqn9f84jr3t6heyckj9geq55yglwqcy2sf3nxyq58y2vtwst50z8f"
 
 
 def exits_without_result(_queue):
@@ -16,6 +22,20 @@ def exits_without_result(_queue):
 
 
 class EnumeratorTest(unittest.TestCase):
+    def test_native_witness_script_types_are_distinguished(self):
+        self.assertEqual(guess_script(P2WPKH_ADDRESS), "P2wpkh")
+        self.assertEqual(guess_script(P2WSH_ADDRESS), "P2wsh")
+        self.assertEqual(guess_script(P2TR_ADDRESS), "P2tr")
+
+    def test_p2wsh_fee_math_never_uses_p2wpkh_input_size(self):
+        self.assertEqual(output_vsize(P2WSH_ADDRESS), P2wshOutputVirtualSize)
+        output = Txo(100_000, P2WSH_ADDRESS, "P2wsh", "output", 2)
+        self.assertEqual(output.effective_value, 100_000 + 2 * P2wshOutputVirtualSize)
+        with self.assertRaisesRegex(ValueError, "depends on its witness script"):
+            input_vsize(P2WSH_ADDRESS)
+        with self.assertRaisesRegex(ValueError, "depends on its witness script"):
+            Txo(100_000, P2WSH_ADDRESS, "P2wsh", "input", 1)
+
     def test_legacy_and_hyphenated_flags_are_accepted(self):
         for minimum_flag in ("--min_mining_fee", "--min-mining-fee"):
             with self.subTest(flag=minimum_flag), mock.patch.object(
