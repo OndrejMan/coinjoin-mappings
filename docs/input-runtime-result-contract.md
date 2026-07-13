@@ -14,9 +14,10 @@ transaction id. Each transaction used by either tool is expected to contain:
 - for each input/output, `value`, `address`, and `wallet_name`;
 - for enumerator inputs, `mix_event_type`.
 
-Missing per-transaction fields become an enumerator transaction-level `error`.
-The enumerator writes all collected results and exits non-zero when any error
-remains. Sake currently fails the process on malformed required fields.
+Missing per-transaction fields become transaction-level `error` records in both
+tools. Each tool writes all collected results and exits non-zero when any error
+remains, so one unsupported Sake address no longer discards results for the
+remaining transactions.
 
 ## Script-type support
 
@@ -33,9 +34,10 @@ Sake's generated full-mix replay and per-wallet samples are limited to P2WPKH
 and Taproot outputs. The Python enumerator therefore has a wider output model;
 both tools fail explicitly on P2WSH inputs.
 
-Enumerator schema `1.1` records the widened P2WSH output contract. Sake keeps
-schema `1.0` because the JSON result shape is unchanged; consumers of the
-combined result must check each nested tool's schema independently.
+Enumerator schema `1.1` records the widened P2WSH output contract. Sake schema
+`1.1` adds per-transaction `status`/`error` records and summary completion/error
+counts. Consumers of the combined result must check each nested tool's schema
+independently.
 
 ## Multiprocessing runtime
 

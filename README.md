@@ -34,8 +34,8 @@ can be started manually with GitHub Actions `workflow_dispatch`.
 ## Output formats
 
 Both tools emit versioned structured JSON so downstream consumers can detect
-format changes. The enumerator currently emits schema `1.1`; Sake emits schema
-`1.0`. The enumerator sorts keys and omits
+format changes. The enumerator and Sake currently emit schema `1.1`. The
+enumerator sorts keys and omits
 measured timing by default (`duration_seconds` is `null`); opt into
 non-deterministic measurements with `--include-timing`. Sake derives random
 streams from the seed plus transaction/wallet identity, so input object order
@@ -75,13 +75,16 @@ the stage).
 
 ```
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "tool": "sake",
   "seed": int,
   "samples": int,
-  "summary": { "transactions", "matched_outputs", "total_outputs",
+  "summary": { "transactions", "completed", "errors", "matched_outputs", "total_outputs",
                "output_match_rate", ... },
-  "transactions": { "<txid>": { per-transaction match statistics } }
+  "transactions": {
+    "<txid>": { "status": "complete", per-transaction match statistics }
+              | { "status": "error", "error": "..." }
+  }
 }
 ```
 
@@ -91,7 +94,9 @@ Wasabi decomposition algorithm with a deterministic per-transaction RNG
 the simulated output decomposition matches the observed one. Sake can parse and
 size observed P2WPKH, P2WSH, and P2TR outputs, while generated replay
 decompositions are limited to P2WPKH and P2TR. P2WSH inputs are rejected because
-their virtual size cannot be inferred from an address.
+their virtual size cannot be inferred from an address. Unsupported or malformed
+addresses now fail only their transaction: Sake writes the other results plus an
+error record, then exits non-zero so the combined PBS stage still fails closed.
 
 ### Combined stage output
 
