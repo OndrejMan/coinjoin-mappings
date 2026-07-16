@@ -96,7 +96,9 @@ size observed P2WPKH, P2WSH, and P2TR outputs, while generated replay
 decompositions are limited to P2WPKH and P2TR. P2WSH inputs are rejected because
 their virtual size cannot be inferred from an address. Unsupported or malformed
 addresses now fail only their transaction: Sake writes the other results plus an
-error record, then exits non-zero so the combined PBS stage still fails closed.
+error record, then exits non-zero. The combined PBS stage accepts that documented
+partial-result exit only when the JSON exists and reports at least one error;
+unexpected exit codes or missing/invalid output still fail the job.
 
 ### Combined stage output
 
@@ -107,7 +109,7 @@ the results into `coinjoin-mappings_data/coinjoin_mappings.json`:
 ```
 {
   "schema_version": "1.0",
-  "status": "complete" | "partial",   // partial when the enumerator timed out on any tx
+  "status": "complete" | "partial",   // partial when either tool timed out or errored
   "provenance": { enumerator_image, sake_image,
                   enumerator_image_digest, sake_image_digest },
   "enumerator": { ...enumerator.json... },
